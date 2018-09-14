@@ -1,0 +1,68 @@
+version: '2'
+services:
+  web:
+    build: .
+    volumes:
+      - config:/opt/postal/config
+      - assets:/usr/src/app/public/assets
+    command: bundle exec puma -C config/puma.rb
+    links:
+      - mysql
+    ports:
+      - "5000:5000"
+    environment:
+      RAILS_SERVE_STATIC_FILES: "true"
+  fast:
+    build: .
+    volumes:
+      - config:/opt/postal/config
+    command: bundle exec rake postal:fast_server
+  worker:
+    build: .
+    volumes:
+      - config:/opt/postal/config
+    command: bundle exec rake postal:worker
+    links:
+      - rabbitmq
+  cron:
+    build: .
+    volumes:
+      - config:/opt/postal/config
+    command: bundle exec rake postal:cron
+  smtp:
+    build: .
+    volumes:
+      - config:/opt/postal/config
+    command: bundle exec rake postal:smtp_server
+  requeuer:
+    build: .
+    volumes:
+      - config:/opt/postal/config
+    command: bundle exec rake postal:requeuer
+    links:
+      - mysql
+  mysql:
+    build:
+      context: .
+      dockerfile: Dockerfile-mysql
+    environment:
+      MYSQL_DATABASE: postal
+      MYSQL_USER: postal
+      MYSQL_PASSWORD: p0st4l
+      MYSQL_ROOT_PASSWORD: p0st4lr00t
+    volumes:
+      - mysql:/var/lib/mysql
+  rabbitmq:
+    image: "rabbitmq:3-management"
+    environment:
+      RABBITMQ_ERLANG_COOKIE: "PHIOCHASOUQUIAXUFIETH"
+      RABBITMQ_DEFAULT_USER: "postal"
+      RABBITMQ_DEFAULT_PASS: "p0st4l"
+      RABBITMQ_DEFAULT_VHOST: "postal"
+    ports:
+      - "15672:15672"
+      - "5672:5672"
+volumes:
+  config:
+  mysql:
+  assets:
