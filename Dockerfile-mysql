@@ -1,2 +1,0 @@
-FROM mysql:5.6
-COPY grants.sql /docker-entrypoint-initdb.d/grants.sql
